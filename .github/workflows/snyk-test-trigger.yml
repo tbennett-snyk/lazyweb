@@ -1,0 +1,46 @@
+name: Snyk Status/Check Run Logger
+
+# 1. Trigger on EITHER a 'status' or a 'check_run' completion event
+on:
+  status:
+    types: [completed]
+  check_run:
+    types: [completed]
+
+jobs:
+  log_snyk_details:
+    runs-on: ubuntu-latest
+    
+    # This job runs if triggered by either event, but we'll try to filter 
+    # for a "Snyk" related event context to save resources.
+    # NOTE: If this job runs, it means one of the 'on' events fired.
+    if: >
+      (github.event_name == 'status' && contains(github.event.context, 'snyk')) ||
+      (github.event_name == 'check_run' && contains(github.event.check_run.name, 'Snyk'))
+
+    steps:
+      - name: 📝 Log Status Event Details (if triggered by 'status')
+        if: github.event_name == 'status'
+        run: |
+          echo "--- STATUS EVENT DETECTED ---"
+          echo "Triggered Status Context: ${{ github.event.context }}"
+          echo "Status Final State: ${{ github.event.state }}"
+          echo "Status URL (Target): ${{ github.event.target_url }}"
+          echo "Raw Payload (Relevant Fields):"
+          echo "${{ toJson(github.event) }}" | grep -E "context|state|target_url"
+        
+      - name: 📝 Log Check Run Details (if triggered by 'check_run')
+        if: github.event_name == 'check_run'
+        run: |
+          echo "--- CHECK RUN EVENT DETECTED ---"
+          echo "Check Run Name: ${{ github.event.check_run.name }}"
+          echo "Check Run ID: ${{ github.event.check_run.id }}"
+          echo "Check Run Conclusion: ${{ github.event.check_run.conclusion }}"
+          echo "Check Run URL: ${{ github.event.check_run.html_url }}"
+          echo "Raw Payload (Relevant Fields):"
+          echo "${{ toJson(github.event.check_run) }}" | grep -E "name|conclusion|html_url"
+          
+      - name: 🛑 Stop Here and Review Output 🛑
+        run: |
+          echo "Review the logs above to find the exact 'context' (for status) or 'name' (for check_run) and the 'state'/'conclusion' that you need."
+          echo "Once you have the exact string (e.g., 'Snyk Code' or 'code/snyk'), you can update your notification workflow."
