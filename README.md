@@ -42,3 +42,5 @@ This will set up the environment and start the application using Docker.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+
